@@ -1,22 +1,15 @@
 import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_EMAIL } from '@/lib/auth';
 
-export default withAuth(
+// NextAuth auth middleware for protected admin routes
+const authMiddleware = withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-pathname', pathname);
-
-    if (pathname === '/admin/login') {
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        }
-      });
-    }
 
     if (token && token.email !== ADMIN_EMAIL) {
       return NextResponse.redirect(
@@ -32,27 +25,34 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        const pathname = req.nextUrl.pathname;
-        if (pathname === '/admin/login') return true;
+      authorized: ({ token }) => {
         return !!token;
       },
     },
   }
 );
 
+// Main middleware wrapper
+export default async function middleware(req: NextRequest, event: any) {
+  const pathname = req.nextUrl.pathname;
+
+  // Set x-pathname header and bypass NextAuth for the login page to prevent redirect loops
+  if (pathname === '/admin/login') {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-pathname', pathname);
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      }
+    });
+  }
+
+  // Run authorization check for all other admin routes
+  return (authMiddleware as any)(req, event);
+}
+
 export const config = {
   matcher: [
-    '/admin',
-    '/admin/posts/:path*',
-    '/admin/drafts/:path*',
-    '/admin/tags/:path*',
-    '/admin/editor/:path*',
-    '/admin/media/:path*',
-    '/admin/settings/:path*',
-    '/admin/analytics/:path*',
-    '/admin/deploys/:path*',
-    '/admin/curation/:path*',
-    '/admin/feeds/:path*',
+    '/admin/:path*',
   ],
 };
