@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "outputFileTracing": {
+    "include": {
+      "app/api/**/*.ts": [
+        "content/posts/**"
+      ]
+    }
+  }
+}

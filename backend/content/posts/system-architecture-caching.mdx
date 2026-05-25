@@ -1,0 +1,56 @@
+---
+title: "Modern Caching Strategies and Architectural Tradeoffs"
+date: "2026-05-24"
+tags: ["engineering", "architecture", "caching"]
+draft: false
+summary: "Understand caching paradigms including Write-Through, Write-Back, Cache-Aside, and eviction policies like LRU/LFU."
+---
+
+# Introduction to Caching
+
+In high-performance software engineering, caching is the single most effective way to improve throughput and minimize latency. By placing a fast storage layer (like Redis or Memcached) between application runtimes and database backends, we bypass slow filesystem and database queries.
+
+However, cache introduces a major problem: **Cache Invalidations and Consistency**.
+
+---
+
+## 1. Caching Strategies
+
+Depending on read/write patterns, engineers choose different cache setups.
+
+### Cache-Aside (Lazy Loading)
+The application queries the cache first. If there's a hit, it returns. If a miss: it queries the DB, writes to the cache, and returns.
+* **Pros**: Cache only stores requested data; DB failures don't crash everything.
+* **Cons**: Three network hops on a miss; stale data if writes go directly to the DB.
+
+### Write-Through
+The application writes to the cache, which immediately writes to the database.
+* **Pros**: Cache is never stale; read latency is consistently fast.
+* **Cons**: Write latency is slow (requires double writes); unused data is cached.
+
+### Write-Back (Write-Behind)
+The application writes to the cache, and the cache writes asynchronously to the database in batches.
+* **Pros**: Extremely fast write speeds.
+* **Cons**: Potential data loss if the cache server crashes before sync completes.
+
+---
+
+## 2. Cache Eviction Policies
+
+Since memory is expensive and limited, caches must evict old entries to make space:
+
+1. **Least Recently Used (LRU)**: Discards the least recently accessed items first.
+2. **Least Frequently Used (LFU)**: Tracks access counts and discards the least frequently accessed items.
+3. **First In First Out (FIFO)**: Discards items in the order they were inserted.
+
+---
+
+## 3. Summary of Tradeoffs
+
+| Strategy | Read Speed | Write Speed | Consistency | Data Loss Risk |
+|---|---|---|---|---|
+| Cache-Aside | Fast (on hit) | Normal | Weak | None |
+| Write-Through | Fast | Slow | Strong | None |
+| Write-Back | Fast | Extremely Fast | Eventual | High |
+
+Selecting the right strategy is a matter of profiling your system read-to-write ratios and aligning with business reliability constraints.

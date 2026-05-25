@@ -1,0 +1,45 @@
+---
+title: "Getting Started with Next.js 14 App Router"
+date: "2026-05-23"
+tags: ["nextjs", "typescript", "web-dev"]
+draft: false
+summary: "A quick guide on setting up and understanding Next.js 14 App Router, Server Components, and styling."
+---
+
+# Introduction to Next.js 14 App Router
+
+Next.js 14 introduces powerful features for building production-ready applications, including React Server Components (RSC), enhanced routing layouts, and built-in optimization.
+
+## Key Concepts
+
+1. **React Server Components (RSC)**: By default, all components inside the `app` router are Server Components. They render on the server, which means less JavaScript is sent to the client.
+2. **File-based Routing**: Folders define routes, and special files (e.g., `page.tsx`, `layout.tsx`, `loading.tsx`) determine the page layout and behavior.
+3. **Data Fetching**: Fetching is simplified with native `fetch` async/await support in Server Components.
+
+### Example Server Component
+
+Here is a simple example of a Server Component in Next.js:
+
+```tsx
+import React from 'react';
+
+interface User {
+  id: number;
+  name: string;
+}
+
+export default async function UserList() {
+  const res = await fetch('https://jsonplaceholder.typicode.com/users');
+  const users: User[] = await res.json();
+
+  return (
+    <ul>
+      {users.map(user => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+This guide sets the stage for integrating Next.js with MDX and a custom CMS.

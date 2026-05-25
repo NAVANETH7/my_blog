@@ -1,0 +1,71 @@
+---
+title: "Core Software Engineering Principles for Scalable Systems"
+date: "2026-05-24"
+tags: ["engineering", "architecture", "software-design"]
+draft: false
+summary: "An in-depth look at key software design principles, clean architecture, and paradigms for building robust applications."
+---
+
+# Introduction to Scalable Software Engineering
+
+Building software systems that can grow over time requires a disciplined approach to code organization, dependency management, and design patterns. Without core principles, codebases grow into hard-to-maintain monoliths.
+
+In this publication, we'll review the pillars of scalable software design.
+
+---
+
+## 1. SOLID Design Principles
+
+Coined by Robert C. Martin, the SOLID principles are a standard guidelines for object-oriented design and modular software.
+
+1. **Single Responsibility Principle (SRP)**: A class or module should have one, and only one, reason to change.
+2. **Open/Closed Principle (OCP)**: Software entities should be open for extension but closed for modification.
+3. **Liskov Substitution Principle (LSP)**: Subtypes must be substitutable for their base types without altering correctness.
+4. **Interface Segregation Principle (ISP)**: Clients should not be forced to depend on interfaces they do not use.
+5. **Dependency Inversion Principle (DIP)**: Depend on abstractions, not concretions.
+
+### Code Example: Dependency Inversion
+
+```typescript
+// Abstraction (Interface)
+interface Database {
+  save(data: string): void;
+}
+
+// Low-level Module
+class MongoDatabase implements Database {
+  save(data: string): void {
+    console.log("Saving data in MongoDB database:", data);
+  }
+}
+
+// High-level Module (Depends on Abstraction)
+class UserManager {
+  private database: Database;
+
+  constructor(db: Database) {
+    this.database = db; // Dependency Injection
+  }
+
+  createUser(name: string) {
+    this.database.save(name);
+  }
+}
+```
+
+---
+
+## 2. Dry vs Wet Codebases
+
+* **DRY (Don't Repeat Yourself)**: Aim to reduce repetition of software patterns, replacing it with abstractions or data normalization.
+* **AHA (Avoid Hasty Abstractions)**: Don't introduce abstractions too early. Sometimes, copying code is cheaper than introducing the wrong abstraction.
+
+---
+
+## 3. High Cohesion & Low Coupling
+
+To achieve system maintainability, aim for:
+* **High Cohesion**: Elements inside a single module should belong together and complete a single logical function.
+* **Low Coupling**: Modules should have minimal dependencies on each other. If one module changes, it shouldn't break another.
+
+By applying these software engineering principles, developers can easily scale projects and improve dev velocity.

@@ -1,0 +1,231 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:#050510;color:#e8e8f0;min-height:100vh}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:18px 32px;border-bottom:0.5px solid rgba(255,255,255,0.08);background:rgba(5,5,16,0.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+.nav-logo{font-size:18px;font-weight:500;letter-spacing:-0.02em;color:#fff}
+.nav-logo span{color:#7c3aed}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-size:13px;color:rgba(255,255,255,0.5);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:#fff}
+.nav-btn{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500}
+
+.hero{padding:80px 32px 60px;text-align:center;position:relative;overflow:hidden}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,58,237,0.12);border:0.5px solid rgba(124,58,237,0.3);color:#a78bfa;font-size:12px;padding:6px 14px;border-radius:20px;margin-bottom:28px}
+.hero-badge-dot{width:6px;height:6px;background:#7c3aed;border-radius:50%}
+.hero h1{font-size:52px;font-weight:600;letter-spacing:-0.03em;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.6) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:16px;color:rgba(255,255,255,0.45);max-width:480px;margin:0 auto 36px;line-height:1.7}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);padding:12px 28px;border-radius:10px;font-size:14px;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-ghost:hover{background:rgba(255,255,255,0.1);color:#fff}
+
+.canvas-wrap{width:100%;height:260px;position:relative;margin:0 0 20px}
+canvas#three{width:100%;height:100%;display:block}
+
+.stats-row{display:flex;justify-content:center;gap:40px;padding:20px 32px;border-top:0.5px solid rgba(255,255,255,0.06);border-bottom:0.5px solid rgba(255,255,255,0.06);margin-bottom:48px}
+.stat{text-align:center}
+.stat-n{font-size:26px;font-weight:600;color:#fff;letter-spacing:-0.02em}
+.stat-l{font-size:12px;color:rgba(255,255,255,0.35);margin-top:2px}
+
+.section{padding:0 32px 48px}
+.section-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:24px}
+.section-title{font-size:20px;font-weight:500;color:#fff;letter-spacing:-0.02em}
+.section-link{font-size:13px;color:#7c3aed;cursor:pointer}
+
+.posts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.post-card{background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.post-card:hover{background:rgba(255,255,255,0.07);border-color:rgba(124,58,237,0.35);transform:translateY(-2px)}
+.post-card-glow{position:absolute;top:-40px;right:-40px;width:100px;height:100px;border-radius:50%;opacity:0;transition:opacity .3s}
+.post-card:hover .post-card-glow{opacity:.15}
+.card-tag{display:inline-block;font-size:11px;color:#a78bfa;background:rgba(124,58,237,0.12);border:0.5px solid rgba(124,58,237,0.2);padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.card-title{font-size:15px;font-weight:500;color:#fff;line-height:1.4;margin-bottom:8px}
+.card-summary{font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{display:flex;justify-content:space-between;align-items:center}
+.card-date{font-size:12px;color:rgba(255,255,255,0.25)}
+.card-read{font-size:12px;color:rgba(255,255,255,0.25)}
+
+.featured-card{background:rgba(124,58,237,0.08);border:0.5px solid rgba(124,58,237,0.25);border-radius:20px;padding:28px;margin-bottom:48px;display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.featured-label{font-size:11px;color:#a78bfa;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.featured-title{font-size:22px;font-weight:600;color:#fff;letter-spacing:-0.02em;line-height:1.3;margin-bottom:10px}
+.featured-summary{font-size:14px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:16px}
+.featured-btn{background:rgba(124,58,237,0.2);color:#a78bfa;border:0.5px solid rgba(124,58,237,0.3);padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s}
+.featured-btn:hover{background:rgba(124,58,237,0.35);color:#c4b5fd}
+.featured-img{width:160px;min-width:120px;height:120px;border-radius:14px;background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(79,70,229,0.3));border:0.5px solid rgba(124,58,237,0.2);display:flex;align-items:center;justify-content:center;font-size:40px;color:rgba(124,58,237,0.6)}
+
+.tags-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:48px}
+.tag-pill{background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;transition:all .2s}
+.tag-pill:hover,.tag-pill.active{background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.3);color:#a78bfa}
+
+.search-bar{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;margin-bottom:32px;transition:border-color .2s}
+.search-bar:focus-within{border-color:rgba(124,58,237,0.4)}
+.search-bar input{background:none;border:none;outline:none;color:#fff;font-size:14px;flex:1;font-family:inherit}
+.search-bar input::placeholder{color:rgba(255,255,255,0.2)}
+.search-icon{color:rgba(255,255,255,0.25);font-size:18px}
+
+.admin-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.1);border:0.5px solid rgba(16,185,129,0.25);color:#34d399;font-size:12px;padding:5px 12px;border-radius:20px}
+.admin-dot{width:6px;height:6px;background:#10b981;border-radius:50%}
+</style>
+
+<div style="background:#050510;min-height:100vh">
+
+<nav class="nav">
+  <div class="nav-logo"><span>◈</span> devlog</div>
+  <div class="nav-links">
+    <a href="#">Blog</a>
+    <a href="#">Tags</a>
+    <a href="#">Search</a>
+    <div class="admin-pill"><span class="admin-dot"></span>Admin</div>
+  </div>
+  <button class="nav-btn">Write post</button>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge"><span class="hero-badge-dot"></span>Git-backed · Zero database · Auto-deploy</div>
+  <h1>Ideas worth<br>publishing</h1>
+  <p class="hero-sub">A modern developer blog powered by GitHub as a database. Write in markdown, deploy in seconds.</p>
+  <div class="hero-ctas">
+    <button class="btn-primary">Read the blog</button>
+    <button class="btn-ghost">Open CMS →</button>
+  </div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="three"></canvas>
+</div>
+
+<div class="stats-row">
+  <div class="stat"><div class="stat-n">24</div><div class="stat-l">Posts published</div></div>
+  <div class="stat"><div class="stat-n">8</div><div class="stat-l">Topics covered</div></div>
+  <div class="stat"><div class="stat-n">~30s</div><div class="stat-l">Deploy time</div></div>
+  <div class="stat"><div class="stat-n">0</div><div class="stat-l">Databases used</div></div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">Featured</span>
+  </div>
+  <div class="featured-card">
+    <div style="flex:1;min-width:200px">
+      <div class="featured-label">Architecture deep-dive</div>
+      <div class="featured-title">How this blog uses GitHub as a database</div>
+      <div class="featured-summary">No PostgreSQL. No MongoDB. Every post is a git commit. Here's the three-pillar architecture that makes it work.</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="featured-btn">Read post →</button>
+        <span style="font-size:12px;color:rgba(255,255,255,0.25)">8 min read · May 20</span>
+      </div>
+    </div>
+    <div class="featured-img">◈</div>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Browse by topic</span>
+  </div>
+  <div class="tags-row" id="tags">
+    <div class="tag-pill active">All</div>
+    <div class="tag-pill">Next.js</div>
+    <div class="tag-pill">TypeScript</div>
+    <div class="tag-pill">Architecture</div>
+    <div class="tag-pill">DevOps</div>
+    <div class="tag-pill">AI</div>
+    <div class="tag-pill">CSS</div>
+  </div>
+
+  <div class="search-bar">
+    <i class="ti ti-search search-icon" aria-hidden="true"></i>
+    <input placeholder="Search posts, tags, topics…" id="search-input">
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Latest posts</span>
+    <span class="section-link">View all →</span>
+  </div>
+  <div class="posts-grid" id="posts-grid">
+    <div class="post-card"><div class="post-card-glow" style="background:#7c3aed"></div><div class="card-tag">Next.js</div><div class="card-title">Building a git-backed headless CMS with Next.js 14</div><div class="card-summary">How to replace a database with GitHub and ship a blog that deploys itself in 30 seconds.</div><div class="card-meta"><span class="card-date">May 20, 2024</span><span class="card-read">8 min</span></div></div>
+    <div class="post-card"><div class="post-card-glow" style="background:#4f46e5"></div><div class="card-tag">TypeScript</div><div class="card-title">Type-safe MDX with gray-matter and next-mdx-remote</div><div class="card-summary">Parsing frontmatter with full TypeScript safety — interfaces, generics, and Zod validation.</div><div class="card-meta"><span class="card-date">May 15, 2024</span><span class="card-read">5 min</span></div></div>
+    <div class="post-card"><div class="post-card-glow" style="background:#0ea5e9"></div><div class="card-tag">DevOps</div><div class="card-title">Auto-deploy on every keystroke with Vercel + simple-git</div><div class="card-summary">The git push that happens invisibly when you hit Save in the CMS — a deep dive.</div><div class="card-meta"><span class="card-date">May 10, 2024</span><span class="card-read">6 min</span></div></div>
+    <div class="post-card"><div class="post-card-glow" style="background:#10b981"></div><div class="card-tag">Architecture</div><div class="card-title">SSG vs SSR vs ISR — a practical decision framework</div><div class="card-summary">When to pre-render, when to server-render, and when to revalidate. With real-world examples.</div><div class="card-meta"><span class="card-date">May 5, 2024</span><span class="card-read">7 min</span></div></div>
+    <div class="post-card"><div class="post-card-glow" style="background:#f59e0b"></div><div class="card-tag">AI</div><div class="card-title">Adding an AI writing assistant to your CMS editor</div><div class="card-summary">Claude API in the markdown editor — suggest titles, improve summaries, auto-tag posts.</div><div class="card-meta"><span class="card-date">Apr 28, 2024</span><span class="card-read">4 min</span></div></div>
+    <div class="post-card"><div class="post-card-glow" style="background:#ec4899"></div><div class="card-tag">CSS</div><div class="card-title">Dark mode without flicker using Tailwind and localStorage</div><div class="card-summary">The classic SSR hydration mismatch problem — and the one-line fix that actually works.</div><div class="card-meta"><span class="card-date">Apr 20, 2024</span><span class="card-read">3 min</span></div></div>
+  </div>
+</div>
+
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const canvas = document.getElementById('three');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
+
+const w = canvas.parentElement.clientWidth;
+const h = canvas.parentElement.clientHeight;
+renderer.setSize(w, h);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+camera.position.set(0, 0, 5);
+
+const group = new THREE.Group();
+scene.add(group);
+
+const geo = new THREE.IcosahedronGeometry(1.2, 1);
+const mat = new THREE.MeshStandardMaterial({
+  color: 0x7c3aed,
+  metalness: 0.4,
+  roughness: 0.3,
+  wireframe: false,
+});
+const mesh = new THREE.Mesh(geo, mat);
+group.add(mesh);
+
+const wgeo = new THREE.IcosahedronGeometry(1.22, 1);
+const wmat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, opacity: 0.25, transparent: true });
+const wire = new THREE.Mesh(wgeo, wmat);
+group.add(wire);
+
+const particles = new THREE.BufferGeometry();
+const count = 200;
+const pos = new Float32Array(count * 3);
+for (let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * 8;
+particles.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+const pmat = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.04, transparent: true, opacity: 0.5 });
+scene.add(new THREE.Points(particles, pmat));
+
+const aLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(aLight);
+const dLight = new THREE.DirectionalLight(0x7c3aed, 2);
+dLight.position.set(2, 3, 2);
+scene.add(dLight);
+const pLight = new THREE.PointLight(0x4f46e5, 3, 8);
+pLight.position.set(-2, -1, 2);
+scene.add(pLight);
+
+let mouse = { x: 0, y: 0 };
+document.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+  mouse.y = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
+});
+
+let t = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  t += 0.008;
+  group.rotation.y = t * 0.4 + mouse.x * 0.3;
+  group.rotation.x = Math.sin(t * 0.3) * 0.2 + mouse.y * 0.15;
+  mesh.material.color.setHSL(0.72 + Math.sin(t * 0.5) * 0.04, 0.8, 0.45);
+  renderer.render(scene, camera);
+}
+animate();
+
+document.querySelectorAll('.tag-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.tag-pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+</script>
