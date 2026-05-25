@@ -20,17 +20,57 @@ import { format, parseISO, subDays, startOfMonth } from 'date-fns';
 import { EditIcon } from './Icons';
 
 interface AnalyticsClientProps {
-  posts: any[];
-  commits: any[];
+  posts?: any[];
+  commits?: any[];
 }
 
-export default function AnalyticsClient({ posts, commits }: AnalyticsClientProps) {
+export default function AnalyticsClient({ posts: initialPosts, commits: initialCommits }: AnalyticsClientProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [posts, setPosts] = useState(initialPosts || []);
+  const [commits, setCommits] = useState(initialCommits || []);
+  const [loading, setLoading] = useState(!initialPosts && !initialCommits);
 
   // Set mounted state
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Client-side fetch
+  useEffect(() => {
+    if (!loading) return;
+
+    let isMounted = true;
+    async function fetchData() {
+      try {
+        const [postsRes, commitsRes] = await Promise.all([
+          fetch('/api/posts?includeDrafts=true'),
+          fetch('/api/deploys'),
+        ]);
+
+        if (!isMounted) return;
+
+        let fetchedPosts = [];
+        let fetchedCommits = [];
+
+        if (postsRes.ok) fetchedPosts = await postsRes.json();
+        if (commitsRes.ok) fetchedCommits = await commitsRes.json();
+
+        setPosts(fetchedPosts);
+        setCommits(fetchedCommits);
+      } catch (err) {
+        console.error('Error fetching analytics data on client:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [loading]);
 
   // 1. Content Stats Calculations
   const stats = useMemo(() => {
@@ -175,7 +215,7 @@ export default function AnalyticsClient({ posts, commits }: AnalyticsClientProps
     };
   }, [posts]);
 
-  if (!isMounted) {
+  if (!isMounted || loading) {
     return (
       <div className="h-[400px] w-full bg-slate-50/50 border border-slate-200 rounded-2xl flex items-center justify-center animate-pulse text-slate-500 font-sans text-[13px]">
         Loading analytics charts...

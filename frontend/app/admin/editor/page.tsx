@@ -1,24 +1,16 @@
-import { getPostBySlug, getAllTags } from '@/lib/posts';
+import { Suspense } from 'react';
 import EditorClient from '@/components/admin/EditorClient';
 
 export const dynamic = 'force-dynamic';
 
-interface PageProps {
-  searchParams: Promise<{
-    slug?: string;
-  }>;
-}
-
-export default async function AdminEditorPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const slug = params.slug;
-  let post = null;
-
-  if (slug) {
-    post = await getPostBySlug(slug);
-  }
-  
-  const tags = await getAllTags();
-
-  return <EditorClient initialPost={post} allTags={tags} />;
+export default async function AdminEditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[400px] w-full bg-slate-50/50 border border-slate-200 rounded-2xl flex items-center justify-center animate-pulse text-slate-500 font-sans text-[13px]">
+        Loading editor...
+      </div>
+    }>
+      <EditorClient />
+    </Suspense>
+  );
 }

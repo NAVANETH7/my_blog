@@ -18,8 +18,8 @@ import {
 } from './Icons';
 
 interface PostsManagerClientProps {
-  initialPosts: any[];
-  initialTags: string[];
+  initialPosts?: any[];
+  initialTags?: string[];
   defaultStatusFilter?: 'all' | 'published' | 'drafts';
 }
 
@@ -31,13 +31,51 @@ export default function PostsManagerClient({
   const router = useRouter();
   
   // State
-  const [posts, setPosts] = useState(initialPosts);
-  const [tags] = useState(initialTags);
+  const [posts, setPosts] = useState(initialPosts || []);
+  const [tags, setTags] = useState(initialTags || []);
+  const [loading, setLoading] = useState(!initialPosts && !initialTags);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'drafts'>(defaultStatusFilter);
   const [sortKey, setSortKey] = useState<'newest' | 'oldest' | 'az'>('newest');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+
+  // Client-side fetch
+  useEffect(() => {
+    if (!loading) return;
+
+    let isMounted = true;
+    async function fetchData() {
+      try {
+        const [postsRes, tagsRes] = await Promise.all([
+          fetch('/api/posts?includeDrafts=true'),
+          fetch('/api/tags'),
+        ]);
+
+        if (!isMounted) return;
+
+        let fetchedPosts = [];
+        let fetchedTags = [];
+
+        if (postsRes.ok) fetchedPosts = await postsRes.json();
+        if (tagsRes.ok) fetchedTags = await tagsRes.json();
+
+        setPosts(fetchedPosts);
+        setTags(fetchedTags);
+      } catch (err) {
+        console.error('Error fetching posts manager data on client:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [loading]);
   
   // Checkbox Selection
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
@@ -410,7 +448,38 @@ export default function PostsManagerClient({
       {/* 3. Posts Table Card */}
       <div className="glow-card-3d overflow-hidden flex flex-col justify-between">
         
-        {paginatedPosts.length === 0 ? (
+        {loading ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse select-none">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-400 text-[11px] font-bold uppercase tracking-wider bg-slate-50/20">
+                  <th className="py-3 px-4 w-10">
+                    <div className="w-4 h-4 bg-slate-200 rounded animate-pulse" />
+                  </th>
+                  <th className="py-3.5 px-3 font-extrabold">Title</th>
+                  <th className="py-3.5 px-3 font-extrabold">Status</th>
+                  <th className="py-3.5 px-3 font-extrabold">Tags</th>
+                  <th className="py-3.5 px-3 font-extrabold">Date</th>
+                  <th className="py-3.5 px-3 font-extrabold">Reading</th>
+                  <th className="py-3.5 px-4 text-right font-extrabold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-4 px-4"><div className="w-4 h-4 bg-slate-200 rounded" /></td>
+                    <td className="py-4 px-3"><div className="w-2/3 h-4 bg-slate-200 rounded-lg" /></td>
+                    <td className="py-4 px-3"><div className="w-16 h-4 bg-slate-200 rounded-full" /></td>
+                    <td className="py-4 px-3"><div className="w-24 h-4 bg-slate-200 rounded" /></td>
+                    <td className="py-4 px-3"><div className="w-20 h-4 bg-slate-100 rounded" /></td>
+                    <td className="py-4 px-3"><div className="w-12 h-4 bg-slate-100 rounded" /></td>
+                    <td className="py-4 px-4 text-right"><div className="inline-block w-24 h-4 bg-slate-100 rounded" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : paginatedPosts.length === 0 ? (
           <div className="py-24 text-center select-none">
             <SearchIcon size={48} className="text-slate-350 mx-auto mb-3" />
             <h3 className="text-[17px] font-bold text-slate-600 mb-1">No posts found</h3>

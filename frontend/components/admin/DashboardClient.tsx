@@ -21,9 +21,9 @@ import {
 } from './Icons';
 
 interface DashboardClientProps {
-  initialPosts: any[];
-  initialTags: string[];
-  initialCommits: any[];
+  initialPosts?: any[];
+  initialTags?: string[];
+  initialCommits?: any[];
 }
 
 function CountUpNumber({ value }: { value: number }) {
@@ -61,11 +61,53 @@ export default function DashboardClient({
   initialCommits,
 }: DashboardClientProps) {
   const router = useRouter();
-  const [posts, setPosts] = useState(initialPosts);
-  const [tags] = useState(initialTags);
-  const [commits, setCommits] = useState(initialCommits);
+  const [posts, setPosts] = useState(initialPosts || []);
+  const [tags, setTags] = useState(initialTags || []);
+  const [commits, setCommits] = useState(initialCommits || []);
+  const [loading, setLoading] = useState(!initialPosts && !initialTags && !initialCommits);
   const [greeting, setGreeting] = useState('Welcome back');
   const [deleteConfirmSlug, setDeleteConfirmSlug] = useState<string | null>(null);
+
+  // Client-side fetch
+  useEffect(() => {
+    if (!loading) return;
+
+    let isMounted = true;
+    async function fetchData() {
+      try {
+        const [postsRes, tagsRes, commitsRes] = await Promise.all([
+          fetch('/api/posts?includeDrafts=true'),
+          fetch('/api/tags'),
+          fetch('/api/deploys'),
+        ]);
+
+        if (!isMounted) return;
+
+        let fetchedPosts = [];
+        let fetchedTags = [];
+        let fetchedCommits = [];
+
+        if (postsRes.ok) fetchedPosts = await postsRes.json();
+        if (tagsRes.ok) fetchedTags = await tagsRes.json();
+        if (commitsRes.ok) fetchedCommits = await commitsRes.json();
+
+        setPosts(fetchedPosts);
+        setTags(fetchedTags);
+        setCommits(fetchedCommits);
+      } catch (err) {
+        console.error('Error fetching dashboard data on client:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [loading]);
 
   // Time-based greeting
   useEffect(() => {
@@ -191,11 +233,19 @@ export default function DashboardClient({
             </span>
             <span className="text-[11px] font-extrabold text-slate-450 tracking-wider uppercase">Total Posts</span>
           </div>
-          <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
-            <CountUpNumber value={publishedCount} />
-          </div>
+          {loading ? (
+            <div className="h-[36px] w-16 bg-slate-200/60 rounded-xl animate-pulse mb-2" />
+          ) : (
+            <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
+              <CountUpNumber value={publishedCount} />
+            </div>
+          )}
           <div className="text-[11px] text-slate-500 flex items-center gap-1 font-semibold">
-            <span className="text-emerald-600 font-bold">+3 this month</span>
+            {loading ? (
+              <span className="h-3 w-20 bg-slate-100/80 rounded animate-pulse" />
+            ) : (
+              <span className="text-emerald-600 font-bold">+3 this month</span>
+            )}
           </div>
         </div>
 
@@ -207,10 +257,16 @@ export default function DashboardClient({
             </span>
             <span className="text-[11px] font-extrabold text-slate-450 tracking-wider uppercase">Total Drafts</span>
           </div>
-          <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
-            <CountUpNumber value={draftsCount} />
+          {loading ? (
+            <div className="h-[36px] w-16 bg-slate-200/60 rounded-xl animate-pulse mb-2" />
+          ) : (
+            <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
+              <CountUpNumber value={draftsCount} />
+            </div>
+          )}
+          <div className="text-[11.5px] text-slate-500 font-semibold">
+            {loading ? <span className="h-3.5 w-24 bg-slate-100/80 rounded animate-pulse block" /> : 'Awaiting publication'}
           </div>
-          <div className="text-[11.5px] text-slate-500 font-semibold">Awaiting publication</div>
         </div>
 
         {/* Card 3: Total Tags */}
@@ -221,10 +277,16 @@ export default function DashboardClient({
             </span>
             <span className="text-[11px] font-extrabold text-slate-450 tracking-wider uppercase">Total Tags</span>
           </div>
-          <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
-            <CountUpNumber value={tags.length} />
+          {loading ? (
+            <div className="h-[36px] w-16 bg-slate-200/60 rounded-xl animate-pulse mb-2" />
+          ) : (
+            <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
+              <CountUpNumber value={tags.length} />
+            </div>
+          )}
+          <div className="text-[11.5px] text-slate-500 font-semibold">
+            {loading ? <span className="h-3.5 w-24 bg-slate-100/80 rounded animate-pulse block" /> : 'Unique taxonomies'}
           </div>
-          <div className="text-[11.5px] text-slate-500 font-semibold">Unique taxonomies</div>
         </div>
 
         {/* Card 4: Deploy Streak */}
@@ -235,10 +297,16 @@ export default function DashboardClient({
             </span>
             <span className="text-[11px] font-extrabold text-slate-450 tracking-wider uppercase">Deploy Streak</span>
           </div>
-          <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
-            <CountUpNumber value={streakDays} />
+          {loading ? (
+            <div className="h-[36px] w-16 bg-slate-200/60 rounded-xl animate-pulse mb-2" />
+          ) : (
+            <div className="text-[36px] font-bold text-slate-850 leading-none mb-2">
+              <CountUpNumber value={streakDays} />
+            </div>
+          )}
+          <div className="text-[11.5px] text-slate-500 font-semibold">
+            {loading ? <span className="h-3.5 w-24 bg-slate-100/80 rounded animate-pulse block" /> : 'Days without failures'}
           </div>
-          <div className="text-[11.5px] text-slate-500 font-semibold">Days without failures</div>
         </div>
 
       </div>
@@ -257,7 +325,18 @@ export default function DashboardClient({
               </Link>
             </div>
 
-            {recentPosts.length === 0 ? (
+            {loading ? (
+              <div className="space-y-4 py-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-b-0">
+                    <div className="h-4.5 bg-slate-200/80 rounded-lg animate-pulse w-1/3" />
+                    <div className="h-4 bg-slate-200/80 rounded-md animate-pulse w-16" />
+                    <div className="h-4 bg-slate-200/80 rounded-md animate-pulse w-20" />
+                    <div className="h-4 bg-slate-100 rounded animate-pulse w-12" />
+                  </div>
+                ))}
+              </div>
+            ) : recentPosts.length === 0 ? (
               <div className="py-16 text-center bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl">
                 <PostsIcon size={40} className="text-slate-400 mx-auto mb-3" />
                 <h3 className="text-[15px] font-bold text-slate-700 mb-1">No posts yet</h3>
@@ -390,7 +469,22 @@ export default function DashboardClient({
               Deploy activity
             </h2>
             
-            {commits.length === 0 ? (
+            {loading ? (
+              <div className="space-y-4 py-2">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center pt-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-200 animate-pulse shrink-0 block" />
+                      {i !== 5 && <span className="w-[1px] h-9 bg-slate-200 my-1 block" />}
+                    </div>
+                    <div className="flex-1 space-y-2 mt-0.5">
+                      <div className="h-4 bg-slate-200/80 rounded-lg animate-pulse w-3/4" />
+                      <div className="h-3 bg-slate-100 rounded-md animate-pulse w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : commits.length === 0 ? (
               <div className="py-16 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
                 <DeployIcon size={24} className="mx-auto mb-2 text-slate-350" />
                 <span className="text-[12.5px] font-bold block">No commit activity available</span>

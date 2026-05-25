@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import toast from 'react-hot-toast';
@@ -28,13 +28,19 @@ const MDEditor = dynamic(
 );
 
 interface EditorClientProps {
-  initialPost: any | null;
-  allTags: string[];
+  initialPost?: any | null;
+  allTags?: string[];
 }
 
 export default function EditorClient({ initialPost, allTags }: EditorClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const slugParam = searchParams ? searchParams.get('slug') : null;
   const [isPending, startTransition] = useTransition();
+
+  // Loading States
+  const [postsLoading, setPostsLoading] = useState(!!slugParam && !initialPost);
+  const [tagsLoading, setTagsLoading] = useState(!allTags);
 
   // Core Editor States
   const [title, setTitle] = useState(initialPost?.frontmatter?.title || '');
@@ -45,10 +51,56 @@ export default function EditorClient({ initialPost, allTags }: EditorClientProps
   const [date, setDate] = useState(initialPost?.frontmatter?.date || new Date().toISOString().split('T')[0]);
   const [draft, setDraft] = useState(initialPost?.frontmatter?.draft !== false);
   const [coverImage, setCoverImage] = useState(initialPost?.frontmatter?.coverImage || '');
+  const [originalSlug, setOriginalSlug] = useState(initialPost?.frontmatter?.slug || '');
+  const [availableTags, setAvailableTags] = useState<string[]>(allTags || []);
 
   // UI States
   const [isDirty, setIsDirty] = useState(false);
-  const [isSlugLocked, setIsSlugLocked] = useState(!!initialPost);
+  const [isSlugLocked, setIsSlugLocked] = useState(!!initialPost || !!slugParam);
+
+  // Client-side fetch
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        if (slugParam && !initialPost) {
+          const res = await fetch(`/api/posts/${slugParam}`);
+          if (res.ok && isMounted) {
+            const data = await res.json();
+            setTitle(data.frontmatter?.title || '');
+            setSlug(data.frontmatter?.slug || '');
+            setSummary(data.frontmatter?.summary || '');
+            setContent(data.content || '');
+            setTags(data.frontmatter?.tags || []);
+            setDate(data.frontmatter?.date || new Date().toISOString().split('T')[0]);
+            setDraft(data.frontmatter?.draft !== false);
+            setCoverImage(data.frontmatter?.coverImage || '');
+            setOriginalSlug(data.frontmatter?.slug || '');
+            setIsSlugLocked(true);
+          }
+        }
+        if (!allTags) {
+          const res = await fetch('/api/tags');
+          if (res.ok && isMounted) {
+            const data = await res.json();
+            setAvailableTags(data);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching editor data client-side:', err);
+      } finally {
+        if (isMounted) {
+          setPostsLoading(false);
+          setTagsLoading(false);
+        }
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [slugParam, initialPost, allTags]);
+
   const [showPreview, setShowPreview] = useState(true);
   const [tagInput, setTagInput] = useState('');
   const [isTagAutocompleteOpen, setIsTagAutocompleteOpen] = useState(false);
@@ -105,7 +157,7 @@ export default function EditorClient({ initialPost, allTags }: EditorClientProps
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slug: initialPost?.frontmatter?.slug || slug, // keep original slug during edit unless explicitly renamed
+          slug: originalSlug || slug, // keep original slug during edit unless explicitly renamed
           newSlug: slug,
           title,
           tags,
@@ -287,6 +339,14 @@ export default function EditorClient({ initialPost, allTags }: EditorClientProps
       }
     }
   };
+
+  if (postsLoading || tagsLoading) {
+    return (
+      <div className="h-[calc(100vh-60px)] w-full bg-slate-50/50 border border-slate-200 rounded-2xl flex items-center justify-center animate-pulse text-slate-500 font-sans text-[13px]">
+        Loading editor workspace...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-60px)] font-sans relative overflow-hidden">
@@ -473,7 +533,7 @@ export default function EditorClient({ initialPost, allTags }: EditorClientProps
             {/* Autocomplete */}
             {isTagAutocompleteOpen && tagInput && (
               <div className="absolute left-0 right-0 mt-1 z-25 bg-white border border-slate-200 rounded-xl shadow-2xl p-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                {allTags
+                {availableTags
                   .filter(t => t.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(t))
                   .map(t => (
                     <button

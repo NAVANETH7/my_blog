@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import {
@@ -14,8 +14,8 @@ import {
 
 interface SettingsClientProps {
   session: any;
-  initialSettings: any;
-  initialGitStatus: any;
+  initialSettings?: any;
+  initialGitStatus?: any;
 }
 
 export default function SettingsClient({
@@ -26,12 +26,12 @@ export default function SettingsClient({
   const [activeTab, setActiveTab] = useState<'profile' | 'blog' | 'github' | 'deploy' | 'danger'>('profile');
   
   // Blog settings forms
-  const [blogName, setBlogName] = useState(initialSettings?.blogName || 'DevBlog');
-  const [blogDescription, setBlogDescription] = useState(initialSettings?.blogDescription || '');
-  const [authorName, setAuthorName] = useState(initialSettings?.authorName || 'Navaneth');
-  const [siteUrl, setSiteUrl] = useState(initialSettings?.siteUrl || 'https://');
-  const [githubUrl, setGithubUrl] = useState(initialSettings?.socialLinks?.github || '');
-  const [twitterUrl, setTwitterUrl] = useState(initialSettings?.socialLinks?.twitter || '');
+  const [blogName, setBlogName] = useState('DevBlog');
+  const [blogDescription, setBlogDescription] = useState('');
+  const [authorName, setAuthorName] = useState('Navaneth');
+  const [siteUrl, setSiteUrl] = useState('https://');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [twitterUrl, setTwitterUrl] = useState('');
 
   // Git status
   const [gitStatus, setGitStatus] = useState(initialGitStatus);
@@ -41,7 +41,64 @@ export default function SettingsClient({
   const [confirmClearDrafts, setConfirmClearDrafts] = useState('');
   const [confirmResetSlugs, setConfirmResetSlugs] = useState('');
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialSettings && !initialGitStatus);
+  const [apiLoading, setApiLoading] = useState(false);
+
+  // Client-side fetch settings & git status
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSettings() {
+      try {
+        const [settingsRes, gitRes] = await Promise.all([
+          fetch('/api/settings'),
+          fetch('/api/git/status'),
+        ]);
+
+        if (!isMounted) return;
+
+        if (settingsRes.ok) {
+          const data = await settingsRes.json();
+          setBlogName(data.blogName || 'DevBlog');
+          setBlogDescription(data.blogDescription || '');
+          setAuthorName(data.authorName || 'Navaneth');
+          setSiteUrl(data.siteUrl || 'https://');
+          setGithubUrl(data.socialLinks?.github || '');
+          setTwitterUrl(data.socialLinks?.twitter || '');
+        }
+
+        if (gitRes.ok) {
+          const gitData = await gitRes.json();
+          setGitStatus(gitData);
+        }
+      } catch (err) {
+        console.error('Error fetching settings client-side:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    if (loading) {
+      loadSettings();
+    } else {
+      if (initialSettings) {
+        setBlogName(initialSettings.blogName || 'DevBlog');
+        setBlogDescription(initialSettings.blogDescription || '');
+        setAuthorName(initialSettings.authorName || 'Navaneth');
+        setSiteUrl(initialSettings.siteUrl || 'https://');
+        setGithubUrl(initialSettings.socialLinks?.github || '');
+        setTwitterUrl(initialSettings.socialLinks?.twitter || '');
+      }
+      if (initialGitStatus) {
+        setGitStatus(initialGitStatus);
+      }
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [loading, initialSettings, initialGitStatus]);
 
   const tabs = [
     { id: 'profile', label: 'Profile' },
@@ -59,7 +116,7 @@ export default function SettingsClient({
       return;
     }
 
-    setLoading(true);
+    setApiLoading(true);
     const saveToast = toast.loading('Saving configurations...');
     try {
       const res = await fetch('/api/settings', {
@@ -86,7 +143,7 @@ export default function SettingsClient({
       console.error(err);
       toast.error('An error occurred', { id: saveToast });
     } finally {
-      setLoading(false);
+      setApiLoading(false);
     }
   };
 
@@ -112,7 +169,7 @@ export default function SettingsClient({
 
   // Trigger manual rebuild
   const handleRebuild = async () => {
-    setLoading(true);
+    setApiLoading(true);
     const rebuildToast = toast.loading('Syncing changes and rebuilding...');
     try {
       const res = await fetch('/api/deploy/trigger', { method: 'POST' });
@@ -125,14 +182,14 @@ export default function SettingsClient({
       console.error(err);
       toast.error('Deploy trigger error', { id: rebuildToast });
     } finally {
-      setLoading(false);
+      setApiLoading(false);
     }
   };
 
   // Danger actions: Clear drafts
   const handleClearDrafts = async () => {
     if (confirmClearDrafts !== 'CONFIRM') return;
-    setLoading(true);
+    setApiLoading(true);
     const draftsToast = toast.loading('Deleting drafts...');
     // We can loop through posts and delete draft posts
     try {
@@ -156,7 +213,7 @@ export default function SettingsClient({
       console.error(err);
       toast.error('Error clearing drafts', { id: draftsToast });
     } finally {
-      setLoading(false);
+      setApiLoading(false);
     }
   };
 
@@ -196,10 +253,33 @@ export default function SettingsClient({
         {/* Right content panels (glass cards) */}
         <div className="flex-grow w-full glow-card-3d p-6 min-h-[400px]">
           
-          {/* TAB 1: PROFILE */}
-          {activeTab === 'profile' && (
-            <div className="space-y-6 select-none animate-in fade-in duration-200">
-              <h2 className="text-[16px] font-bold text-slate-800 border-b border-slate-150 pb-2">Profile info</h2>
+          {loading ? (
+            <div className="space-y-6 animate-pulse select-none">
+              <div className="h-6 bg-slate-200/80 rounded w-1/3 mb-4" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <div className="h-3.5 bg-slate-200/60 rounded w-16" />
+                    <div className="h-10 bg-slate-100 rounded w-full" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-3.5 bg-slate-200/60 rounded w-16" />
+                    <div className="h-10 bg-slate-100 rounded w-full" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-3.5 bg-slate-200/60 rounded w-20" />
+                  <div className="h-20 bg-slate-100 rounded w-full" />
+                </div>
+                <div className="h-10 bg-slate-200/85 rounded w-24 mt-4" />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* TAB 1: PROFILE */}
+              {activeTab === 'profile' && (
+                <div className="space-y-6 select-none animate-in fade-in duration-200">
+                  <h2 className="text-[16px] font-bold text-slate-800 border-b border-slate-150 pb-2">Profile info</h2>
               
               <div className="flex flex-col sm:flex-row items-center gap-5">
                 <div className="w-20 h-20 rounded-full relative overflow-hidden bg-violet-600 border border-slate-200 flex items-center justify-center font-bold text-[28px] text-white shadow-sm">
@@ -320,8 +400,8 @@ export default function SettingsClient({
               <div className="flex justify-end pt-3">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-705 text-white text-[13px] font-bold cursor-pointer transition-colors shadow-sm shadow-violet-500/10"
+                  disabled={apiLoading}
+                  className="px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-750 text-white text-[13px] font-bold cursor-pointer transition-colors shadow-sm shadow-violet-500/10"
                 >
                   Save settings
                 </button>
@@ -395,7 +475,7 @@ export default function SettingsClient({
                 <div className="pt-2">
                   <button
                     onClick={handleRebuild}
-                    disabled={loading}
+                    disabled={apiLoading}
                     className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-bold transition-all shadow-sm shadow-violet-500/10 cursor-pointer"
                   >
                     Trigger rebuild
@@ -431,7 +511,7 @@ export default function SettingsClient({
                   </div>
                   <button
                     onClick={handleClearDrafts}
-                    disabled={confirmClearDrafts !== 'CONFIRM' || loading}
+                    disabled={confirmClearDrafts !== 'CONFIRM' || apiLoading}
                     className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-[12.5px] font-bold transition-all duration-150 cursor-pointer disabled:opacity-30 shrink-0 w-full sm:w-auto"
                   >
                     Delete all drafts
@@ -440,6 +520,9 @@ export default function SettingsClient({
               </div>
 
             </div>
+          )}
+
+            </>
           )}
 
         </div>

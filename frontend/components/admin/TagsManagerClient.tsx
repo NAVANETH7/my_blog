@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -12,8 +12,8 @@ import {
 } from './Icons';
 
 interface TagsManagerClientProps {
-  initialPosts: any[];
-  initialTags: string[];
+  initialPosts?: any[];
+  initialTags?: string[];
 }
 
 export default function TagsManagerClient({
@@ -21,13 +21,51 @@ export default function TagsManagerClient({
   initialTags,
 }: TagsManagerClientProps) {
   const router = useRouter();
-  const [posts, setPosts] = useState(initialPosts);
-  const [tags, setTags] = useState(initialTags);
+  const [posts, setPosts] = useState(initialPosts || []);
+  const [tags, setTags] = useState(initialTags || []);
+  const [loading, setLoading] = useState(!initialPosts && !initialTags);
   const [renameTag, setRenameTag] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [mergeSourceTag, setMergeSourceTag] = useState<string | null>(null);
   const [mergeTargetTag, setMergeTargetTag] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [apiLoading, setApiLoading] = useState(false);
+
+  // Client-side fetch
+  useEffect(() => {
+    if (!loading) return;
+
+    let isMounted = true;
+    async function fetchData() {
+      try {
+        const [postsRes, tagsRes] = await Promise.all([
+          fetch('/api/posts?includeDrafts=true'),
+          fetch('/api/tags'),
+        ]);
+
+        if (!isMounted) return;
+
+        let fetchedPosts = [];
+        let fetchedTags = [];
+
+        if (postsRes.ok) fetchedPosts = await postsRes.json();
+        if (tagsRes.ok) fetchedTags = await tagsRes.json();
+
+        setPosts(fetchedPosts);
+        setTags(fetchedTags);
+      } catch (err) {
+        console.error('Error fetching tags manager data on client:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [loading]);
 
   // Calculate post counts per tag dynamically
   const tagStats = useMemo(() => {
@@ -60,7 +98,7 @@ export default function TagsManagerClient({
       return;
     }
 
-    setLoading(true);
+    setApiLoading(true);
     const renameToast = toast.loading(`Renaming "${oldTag}" to "${cleaned}"...`);
 
     try {
@@ -92,7 +130,7 @@ export default function TagsManagerClient({
       console.error(err);
       toast.error('An error occurred', { id: renameToast });
     } finally {
-      setLoading(false);
+      setApiLoading(false);
     }
   };
 
@@ -107,7 +145,7 @@ export default function TagsManagerClient({
       return;
     }
 
-    setLoading(true);
+    setApiLoading(true);
     const mergeToast = toast.loading(`Merging "${mergeSourceTag}" into "${mergeTargetTag}"...`);
 
     try {
@@ -144,7 +182,7 @@ export default function TagsManagerClient({
       console.error(err);
       toast.error('An error occurred during merge', { id: mergeToast });
     } finally {
-      setLoading(false);
+      setApiLoading(false);
     }
   };
 
@@ -167,7 +205,19 @@ export default function TagsManagerClient({
       </div>
 
       {/* 2. Tags Grid list */}
-      {tagStats.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="glow-card-3d p-5 rounded-2xl flex flex-col justify-between h-[135px] animate-pulse">
+              <div className="h-6 bg-slate-200/85 rounded w-1/2" />
+              <div className="flex justify-between items-center mt-4">
+                <div className="h-4 bg-slate-200/85 rounded w-16" />
+                <div className="h-4 bg-slate-100 rounded w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : tagStats.length === 0 ? (
         <div className="py-24 text-center border border-dashed border-slate-200 rounded-2xl select-none bg-slate-50/50">
           <TagsIcon size={48} className="text-slate-350 mx-auto mb-3" />
           <h3 className="text-[16px] font-bold text-slate-700 mb-1">No tags found</h3>
@@ -297,8 +347,8 @@ export default function TagsManagerClient({
               </button>
               <button
                 onClick={handleMergeTag}
-                disabled={loading || !mergeTargetTag}
-                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-sm shadow-violet-500/10"
+                disabled={apiLoading || !mergeTargetTag}
+                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-750 text-white text-[12px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-sm shadow-violet-500/10"
               >
                 Merge tags
               </button>
