@@ -1,6 +1,8 @@
 import { getAllPosts } from '@/lib/posts';
 import BlogTabs from '@/components/BlogTabs';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Publications Feed - DevBlog',
   description: 'Articles and developer guides on web frameworks, backend systems, and frontend aesthetics.',

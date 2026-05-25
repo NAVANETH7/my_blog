@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { getAllPosts, getAllTags } from '@/lib/posts';
 import PostCard from '@/components/PostCard';
 
+export const dynamic = 'force-dynamic';
+
 interface TagPageProps {
   params: Promise<{
     tag: string;

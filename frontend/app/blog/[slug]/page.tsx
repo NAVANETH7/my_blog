@@ -5,6 +5,8 @@ import MDXContent from '@/components/MDXContent';
 import ViewCounter from '@/components/ViewCounter';
 import ReadingProgress from '@/components/ReadingProgress';
 
+export const dynamic = 'force-dynamic';
+
 interface PostPageProps {
   params: Promise<{
     slug: string;
