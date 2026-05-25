@@ -43,6 +43,16 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/admin/:path*',
+    '/admin',
+    '/admin/posts/:path*',
+    '/admin/drafts/:path*',
+    '/admin/tags/:path*',
+    '/admin/editor/:path*',
+    '/admin/media/:path*',
+    '/admin/settings/:path*',
+    '/admin/analytics/:path*',
+    '/admin/deploys/:path*',
+    '/admin/curation/:path*',
+    '/admin/feeds/:path*',
   ],
 };
